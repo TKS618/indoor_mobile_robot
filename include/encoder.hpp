@@ -3,7 +3,7 @@
 
 class Encoder{
 public:
-    Encoder(uint8_t pin_a, uint8_t pin_b);
+    Encoder(uint8_t pin_a, uint8_t pin_b, bool invert = false);
 
     void begin();
 
@@ -20,6 +20,7 @@ public:
 private:
     uint8_t pin_a_;
     uint8_t pin_b_;
+    bool invert_;
 
     volatile long count      = 0;
     long          prev_count = 0;

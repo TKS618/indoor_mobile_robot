@@ -1,7 +1,7 @@
 #include "encoder.hpp"
 
-Encoder::Encoder(uint8_t pin_a, uint8_t pin_b)
-    :pin_a_(pin_a), pin_b_(pin_b){}
+Encoder::Encoder(uint8_t pin_a, uint8_t pin_b, bool invert)
+    :pin_a_(pin_a), pin_b_(pin_b), invert_(invert){}
 
 void Encoder::begin(){
     pinMode(pin_a_, INPUT_PULLUP);
@@ -13,20 +13,26 @@ void Encoder::handleA(){
     bool phaseA  = digitalRead(pin_a_);
     bool phaseB  = digitalRead(pin_b_);
 
+    long step;
     if(phaseA  == phaseB )
-        count++;
+        step = 1;
     else
-        count--;
+        step = -1;
+    if(invert_) step = -step;
+    count += step;
 }
 
 void Encoder::handleB(){
     bool phaseA  = digitalRead(pin_a_);
     bool phaseB  = digitalRead(pin_b_);
 
+    long step;
     if(phaseA  != phaseB )
-        count++;
+        step = 1;
     else
-        count--;
+        step = -1;
+    if(invert_) step = -step;
+    count += step;
 }
 
 long Encoder::getCount() const{
