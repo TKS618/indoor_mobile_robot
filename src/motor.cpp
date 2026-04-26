@@ -57,17 +57,23 @@ float Motor::applyPID(float measured, float dt){
     return pid_.kp * error + pid_.ki * pid_.integral + pid_.kd * derivative;
 }
 
-void Motor::outputCommand(float control){
+void Motor::outputCommand(float control, bool rotate_vec){
     last_control = control;
     control = static_cast<float>(output_sign_) * control;
 
     if constexpr(MOTOR_DRIVER == MotorDriverType::QUICRUN){
-        int pulse = static_cast<int>(ESC_NEUTRAL + control);
-
+        float target = target_rad_per_sec/MAX_WHEEL_RAD_S;
+        target = clampFloat(target, -1.0f, 1.0f);
+        int pulse;
+        if(fabs(target) < 0.05f)
+            target = 0.0f;
+        if(rotate_vec)
+            pulse = ESC_NEUTRAL + static_cast<int>(target * 200.0f);
+        else
+            pulse = ESC_NEUTRAL - static_cast<int>(target * 490.0f);
         if (pulse < ESC_MIN) pulse = ESC_MIN;
         if (pulse > ESC_MAX) pulse = ESC_MAX;
-
-        esc_.writeMicroseconds(1300);
+        esc_.writeMicroseconds(pulse);
         last_command = pulse;
     }
     else{
@@ -89,9 +95,9 @@ void Motor::outputCommand(float control){
     }
 }
 
-void Motor::update(float measured_rad_per_sec, float dt){
+void Motor::update(float measured_rad_per_sec, float dt, bool rotate_vec){
     float control = applyPID(measured_rad_per_sec, dt);
-    outputCommand(control);
+    outputCommand(control, rotate_vec);
 }
 
 void Motor::stop() {

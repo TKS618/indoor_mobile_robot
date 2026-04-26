@@ -17,7 +17,7 @@ public:
     void setTargetRadPerSec(float target);
     float getTargetRadPerSec() const;
 
-    void update(float measured_rad_per_sec, float dt);
+    void update(float measured_rad_per_sec, float dt, bool rotate_vec);
     void stop();
 
 
@@ -26,7 +26,7 @@ public:
 
 private:
     float applyPID(float measured, float dt);
-    void outputCommand(float control);
+    void outputCommand(float control, bool rotate_vec);
 
     int pin1_;
     int pin2_;

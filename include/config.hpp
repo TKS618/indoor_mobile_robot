@@ -21,13 +21,14 @@ constexpr int RIGHT_ENC_B = 22;
 constexpr int LEFT_ENC_A  = 41;
 constexpr int LEFT_ENC_B  = 40;
 
-constexpr float PULSE_PER_REV = 1646.2; //車輪PPR
+constexpr float PULSE_PER_REV = 2145.2f; //車輪PPR
 
 constexpr unsigned long MEASURE_PERIOD = 100;                            //エンコーダ計測時間
 
 /*Odometry*/
-
-
+constexpr float WHEEL_RADIUS = 0.034f; //半径3.4cm
+constexpr float WHEEL_BASE   = 0.282782f;
+constexpr float WHEEL_BASE_INV = 1 / WHEEL_BASE;
 /*Motor*/
 // 右輪motorのESCピン番号
 constexpr int RIGHT_ESC_PIN = 21;
@@ -55,6 +56,6 @@ constexpr float KI_RIGHT = 0.0f;
 constexpr float KD_RIGHT = 0.0f;
 
 // 目標角速度上限
-constexpr float MAX_WHEEL_RAD_S = 10.0f;
+constexpr float MAX_WHEEL_RAD_S = 5.0f;
 
 /*Telemetry*/
