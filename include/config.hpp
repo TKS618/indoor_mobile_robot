@@ -28,6 +28,7 @@ constexpr unsigned long MEASURE_PERIOD = 100;                            //エ�
 /*Odometry*/
 constexpr float WHEEL_RADIUS = 0.034f; //半径3.4cm
 constexpr float WHEEL_BASE   = 0.282782f;
+constexpr float WHEEL_RADIUS_INV = 1 / WHEEL_RADIUS;
 constexpr float WHEEL_BASE_INV = 1 / WHEEL_BASE;
 /*Motor*/
 // 右輪motorのESCピン番号
@@ -59,3 +60,5 @@ constexpr float KD_RIGHT = 0.0f;
 constexpr float MAX_WHEEL_RAD_S = 5.0f;
 
 /*Telemetry*/
+constexpr unsigned long ODOM_PUBLISH_PERIOD = 50;   // [ms] 20Hz
+constexpr unsigned long CMD_VEL_TIMEOUT_MS  = 500;  // [ms]

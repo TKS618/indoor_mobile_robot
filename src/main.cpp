@@ -14,8 +14,9 @@ Motor motor_right(RIGHT_ESC_PIN, -1, -1, RIGHT_ESC_SIGN);
 Motor motor_left (LEFT_ESC_PIN , -1, -1, LEFT_ESC_SIGN);
 
 Odometry odom;
+Telemetry telemetry;
+// constexpr float TARGET_RAD_PER_SEC = 5.00f;
 
-constexpr float TARGET_RAD_PER_SEC = 5.00f;
 // ===== ISR =====
 void isr_right_A(){
   enc_right.handleA();
@@ -37,9 +38,13 @@ void setup() {
   motor_right.begin(KP_RIGHT, KI_RIGHT, KD_RIGHT);
   motor_left.begin(KP_LEFT, KI_LEFT, KD_LEFT);
 
-  motor_right.setTargetRadPerSec(TARGET_RAD_PER_SEC);
-  motor_left.setTargetRadPerSec(TARGET_RAD_PER_SEC);
-
+  // micro-ROS setup
+  if (!telemetry.begin()) {
+    while (1) {
+      Serial.println("micro-ROS init failed");
+      delay(1000);
+    }
+  }
   delay(1000);
   start_time = millis();
 }
@@ -47,8 +52,12 @@ void setup() {
 void loop() {
   static unsigned long last_control_time = 0;
   static unsigned long last_print_time = 0;
+  static unsigned long last_odom_pub_time = 0;
   static float omega_r = 0.0f;
   static float omega_l = 0.0f;
+
+  telemetry.spin();
+  telemetry.updateCmdVelTimeout();
   
   unsigned long now = millis();
   if (last_control_time == 0) {
@@ -61,31 +70,29 @@ void loop() {
   // 速度更新
   enc_right.updateVelocity(now);
   enc_left.updateVelocity(now);
-  if (now - start_time < RUN_TIME) {
+  if (now - start_time > CONTROL_PERIOD) {
     if (now - last_control_time >= CONTROL_PERIOD) {
       float dt = static_cast<float>(now - last_control_time) / 1000.0f;
       last_control_time = now;
 
       omega_r = enc_right.getRadPerSec();
       omega_l = enc_left.getRadPerSec();
+
+      float target_r = telemetry.getTargetRightRadPerSec();
+      float target_l = telemetry.getTargetLeftRadPerSec();
+
+      motor_right.setTargetRadPerSec(target_r);
+      motor_left.setTargetRadPerSec(target_l);
 
       motor_right.update(omega_r, dt, RIGHT_ENCODER_INVERT);
       motor_left.update(omega_l, dt, LEFT_ENCODER_INVERT);
       odom.update(omega_r, omega_l, dt);
     }
   } 
-  else {
-    motor_right.stop();
-    motor_left.stop();
-    if (now - last_control_time >= CONTROL_PERIOD) {
-      float dt = static_cast<float>(now - last_control_time) / 1000.0f;
-      last_control_time = now;
-
-      omega_r = enc_right.getRadPerSec();
-      omega_l = enc_left.getRadPerSec();
-
-      odom.update(omega_r, omega_l, dt);
-    }
+  
+  if(now -last_odom_pub_time >= ODOM_PUBLISH_PERIOD){
+    last_odom_pub_time = now;
+    telemetry.publishOdom(odom.getX(), odom.getY(), odom.getTheta());
   }
   
   if (now - last_print_time >= MEASURE_PERIOD) {
@@ -106,8 +113,11 @@ void loop() {
     Serial.print(" theta: ");
     Serial.print(odom.getTheta(), 3);
 
-    Serial.print(" target: ");
-    Serial.print(TARGET_RAD_PER_SEC);
+    Serial.print(" target R: ");
+    Serial.print(telemetry.getTargetRightRadPerSec());
+
+    Serial.print(" target L: ");
+    Serial.print(telemetry.getTargetLeftRadPerSec());
 
     Serial.print(" | R omega: ");
     Serial.print(omega_r);
