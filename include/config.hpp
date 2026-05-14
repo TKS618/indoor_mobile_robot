@@ -8,10 +8,11 @@ constexpr unsigned long RUN_TIME = 20000;      // 20秒
 // ===== driver type =====
 enum class MotorDriverType {
     QUICRUN,
-    TB6612
+    MDD3A
+    
 };
 
-constexpr MotorDriverType MOTOR_DRIVER = MotorDriverType::QUICRUN;
+constexpr MotorDriverType MOTOR_DRIVER = MotorDriverType::MDD3A;
 
 /*Encoder*/
 // 右輪encoderのA, B相のピン番号
@@ -31,10 +32,12 @@ constexpr float WHEEL_BASE   = 0.282782f;
 constexpr float WHEEL_RADIUS_INV = 1 / WHEEL_RADIUS;
 constexpr float WHEEL_BASE_INV = 1 / WHEEL_BASE;
 /*Motor*/
-// 右輪motorのESCピン番号
-constexpr int RIGHT_ESC_PIN = 21;
+// 右輪motorのピン番号
+constexpr int RIGHT_PIN_1 = 21;
+constexpr int RIGHT_PIN_2 = 20;
 // 左輪motorのESCピン番号
-constexpr int LEFT_ESC_PIN = 39;
+constexpr int LEFT_PIN_1 = 39;
+constexpr int LEFT_PIN_2 = 38;
 
 // Motor回転方向
 constexpr bool RIGHT_ENCODER_INVERT = false;

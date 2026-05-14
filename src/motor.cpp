@@ -6,8 +6,8 @@ static float clampFloat(float x, float min_val, float max_val){
     return x;
 }
 
-Motor::Motor(int pin1, int pin2, int pin_pwm, int output_sign)
-    :pin1_(pin1), pin2_(pin2), pin_pwm_(pin_pwm), output_sign_(output_sign)
+Motor::Motor(int pin1, int pin2, int output_sign)
+    :pin1_(pin1), pin2_(pin2), output_sign_(output_sign)
 {
     pid_.kp         = 0.0f;
     pid_.ki         = 0.0f;
@@ -25,10 +25,8 @@ void Motor::begin(float kp, float ki, float kd){
     else{
         pinMode(pin1_, OUTPUT);
         pinMode(pin2_, OUTPUT);
-        pinMode(pin_pwm_, OUTPUT);
-        analogWrite(pin_pwm_, 0);
-        digitalWrite(pin1_, LOW);
-        digitalWrite(pin2_, LOW);
+        digitalWrite(pin1_, 0);
+        digitalWrite(pin2_, 0);
         last_command = 0;
     }
 
@@ -83,13 +81,11 @@ void Motor::outputCommand(float control, bool rotate_vec){
         if (pwm < -255) pwm = -255;
 
         if (pwm >= 0) {
-            digitalWrite(pin1_, HIGH);
-            digitalWrite(pin2_, LOW);
-            analogWrite(pin_pwm_, pwm);
+            analogWrite(pin1_, pwm);   // A PWM
+            analogWrite(pin2_, 0);     // B LOW
         } else {
-            digitalWrite(pin1_, LOW);
-            digitalWrite(pin2_, HIGH);
-            analogWrite(pin_pwm_, -pwm);
+            analogWrite(pin1_, 0);     // A LOW
+            analogWrite(pin2_, -pwm);  // B PWM
         }
         last_command = pwm;
     }
@@ -110,9 +106,8 @@ void Motor::stop() {
         esc_.writeMicroseconds(ESC_NEUTRAL);
         last_command = ESC_NEUTRAL;
     } else {
-        analogWrite(pin_pwm_, 0);
-        digitalWrite(pin1_, LOW);
-        digitalWrite(pin2_, LOW);
+        analogWrite(pin1_, 0);
+        analogWrite(pin2_, 0);
         last_command = 0;
     }
 }

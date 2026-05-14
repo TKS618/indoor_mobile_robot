@@ -10,8 +10,12 @@ unsigned long start_time = 0;
 Encoder enc_right(RIGHT_ENC_A, RIGHT_ENC_B, RIGHT_ENCODER_INVERT);
 Encoder enc_left (LEFT_ENC_A , LEFT_ENC_B, LEFT_ENCODER_INVERT);
 
-Motor motor_right(RIGHT_ESC_PIN, -1, -1, RIGHT_ESC_SIGN);
-Motor motor_left (LEFT_ESC_PIN , -1, -1, LEFT_ESC_SIGN);
+// Motor motor_right(RIGHT_ESC_PIN, -1, -1, RIGHT_ESC_SIGN);
+// Motor motor_left (LEFT_ESC_PIN , -1, -1, LEFT_ESC_SIGN);
+
+Motor motor_right(RIGHT_PIN_1, RIGHT_PIN_2, RIGHT_ESC_SIGN);
+Motor motor_left (LEFT_PIN_1, LEFT_PIN_2, LEFT_ESC_SIGN);
+
 
 Odometry odom;
 Telemetry telemetry;
