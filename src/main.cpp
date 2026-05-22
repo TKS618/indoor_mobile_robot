@@ -20,7 +20,7 @@ Motor motor_left (LEFT_PIN_1, LEFT_PIN_2, LEFT_ESC_SIGN);
 Odometry odom;
 Telemetry telemetry;
 
-constexpr float TARGET_RAD_PER_SEC = 4.00f;
+constexpr float TARGET_RAD_PER_SEC = -4.0f;
 
 // ===== ISR =====
 void isr_right_A(){
@@ -40,16 +40,22 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(RIGHT_ENC_A), isr_right_A, RISING);
   attachInterrupt(digitalPinToInterrupt(LEFT_ENC_A ), isr_left_A , RISING);
 
+  /*Motor setup*/
+  analogWriteResolution(PWM_BIT);
+  analogWriteFrequency(RIGHT_PIN_1, PWM_FREQ_HZ);
+  analogWriteFrequency(RIGHT_PIN_2, PWM_FREQ_HZ);
+  analogWriteFrequency(LEFT_PIN_1, PWM_FREQ_HZ);
+  analogWriteFrequency(LEFT_PIN_2, PWM_FREQ_HZ);
   motor_right.begin(KP_RIGHT, KI_RIGHT, KD_RIGHT);
   motor_left.begin(KP_LEFT, KI_LEFT, KD_LEFT);
 
   // micro-ROS setup
-  if (!telemetry.begin()) {
-    while (1) {
-      Serial.println("micro-ROS init failed");
-      delay(1000);
-    }
-  }
+  // if (!telemetry.begin()) {
+  //   while (1) {
+  //     Serial.println("micro-ROS init failed");
+  //     delay(1000);
+  //   }
+  // }
   delay(1000);
   start_time = millis();
 }
@@ -60,11 +66,11 @@ void loop() {
   static unsigned long last_odom_pub_time = 0;
   static float omega_r = 0.0f;
   static float omega_l = 0.0f;
-  float target_r = 0.0f;
-  float target_l = 0.0f;
+  static float target_r = 0.0f;
+  static float target_l = 0.0f;
 
-  telemetry.spin();
-  telemetry.updateCmdVelTimeout();
+  // telemetry.spin();
+  // telemetry.updateCmdVelTimeout();
   
   unsigned long now = millis();
   if (last_control_time == 0) {
@@ -93,15 +99,15 @@ void loop() {
       motor_right.setTargetRadPerSec(target_r);
       motor_left.setTargetRadPerSec(target_l);
 
-      motor_right.update(omega_r, dt, RIGHT_ENCODER_INVERT);
-      motor_left.update(omega_l, dt, LEFT_ENCODER_INVERT);
+      motor_right.update(omega_r, dt);
+      motor_left.update(omega_l, dt);
       odom.update(omega_r, omega_l, dt);
     }
   } 
   
   if(now -last_odom_pub_time >= ODOM_PUBLISH_PERIOD){
     last_odom_pub_time = now;
-    telemetry.publishOdom(odom.getX(), odom.getY(), odom.getTheta());
+    // telemetry.publishOdom(odom.getX(), odom.getY(), odom.getTheta());
   }
   
   if (now - last_print_time >= MEASURE_PERIOD) {
@@ -143,3 +149,31 @@ void loop() {
     Serial.println(cmd_l);
   }
 }
+
+
+// test code
+// #include "config.hpp"
+// void setup() {
+//   Serial.begin(115200);
+//   delay(1000);
+//   Serial.println("motor test");
+
+//   pinMode(RIGHT_PIN_1, OUTPUT);
+//   pinMode(RIGHT_PIN_2, OUTPUT);
+//   pinMode(LEFT_PIN_1, OUTPUT);
+//   pinMode(LEFT_PIN_2, OUTPUT);
+
+//   analogWriteFrequency(RIGHT_PIN_1, 1000);
+//   analogWriteResolution(PWM_BIT);
+//   analogWrite(RIGHT_PIN_1, 2000);
+//   digitalWrite(RIGHT_PIN_2, LOW);
+
+//   analogWriteFrequency(LEFT_PIN_1, 1000);
+//   analogWriteFrequency(LEFT_PIN_2, 1000);
+//   analogWriteResolution(PWM_BIT);
+//   analogWrite(LEFT_PIN_1, 2000);
+//   digitalWrite(LEFT_PIN_2, LOW);
+// }
+
+// void loop() {
+// }

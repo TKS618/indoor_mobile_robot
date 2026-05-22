@@ -32,19 +32,22 @@ constexpr float WHEEL_BASE   = 0.282782f;
 constexpr float WHEEL_RADIUS_INV = 1 / WHEEL_RADIUS;
 constexpr float WHEEL_BASE_INV = 1 / WHEEL_BASE;
 /*Motor*/
+constexpr int PWM_BIT = 12;
+constexpr int PWM_MAX = (1 << PWM_BIT) - 1;
+constexpr float PWM_FREQ_HZ = 1000.0f;
 // 右輪motorのピン番号
-constexpr int RIGHT_PIN_1 = 21;
-constexpr int RIGHT_PIN_2 = 20;
+constexpr int RIGHT_PIN_1 = 1;//M1A
+constexpr int RIGHT_PIN_2 = 2;//M1B
 // 左輪motorのESCピン番号
-constexpr int LEFT_PIN_1 = 39;
-constexpr int LEFT_PIN_2 = 38;
+constexpr int LEFT_PIN_1 = 3;//M2A
+constexpr int LEFT_PIN_2 = 4;//M2B
 
 // Motor回転方向
 constexpr bool RIGHT_ENCODER_INVERT = false;
 constexpr bool LEFT_ENCODER_INVERT  = true;
 
-constexpr int RIGHT_ESC_SIGN = -1;  // 前方で1500以下
-constexpr int LEFT_ESC_SIGN  = +1;  // 前方で1500以上
+constexpr int RIGHT_ESC_SIGN = +1;
+constexpr int LEFT_ESC_SIGN  = +1;
 
 // quicrunでのmotor制御
 constexpr int ESC_MIN = 1000;
@@ -52,12 +55,12 @@ constexpr int ESC_NEUTRAL = 1500;
 constexpr int ESC_MAX = 2000;
 
 // ===== PID =====
-constexpr float KP_LEFT  = 200.0f;
-constexpr float KI_LEFT  = 0.0f;
+constexpr float KP_LEFT  = 2150.0f;
+constexpr float KI_LEFT  = 10.0f;
 constexpr float KD_LEFT  = 0.0f;
-constexpr float KP_RIGHT = 200.0f;
-constexpr float KI_RIGHT = 0.0f;
-constexpr float KD_RIGHT = 0.0f;
+constexpr float KP_RIGHT = 500.0f;
+constexpr float KI_RIGHT = 1.0f;
+constexpr float KD_RIGHT = 10.0f;
 
 // 目標角速度上限
 constexpr float MAX_WHEEL_RAD_S = 5.0f;
