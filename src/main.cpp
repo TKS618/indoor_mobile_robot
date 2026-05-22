@@ -19,7 +19,8 @@ Motor motor_left (LEFT_PIN_1, LEFT_PIN_2, LEFT_ESC_SIGN);
 
 Odometry odom;
 Telemetry telemetry;
-// constexpr float TARGET_RAD_PER_SEC = 5.00f;
+
+constexpr float TARGET_RAD_PER_SEC = 4.00f;
 
 // ===== ISR =====
 void isr_right_A(){
@@ -59,6 +60,8 @@ void loop() {
   static unsigned long last_odom_pub_time = 0;
   static float omega_r = 0.0f;
   static float omega_l = 0.0f;
+  float target_r = 0.0f;
+  float target_l = 0.0f;
 
   telemetry.spin();
   telemetry.updateCmdVelTimeout();
@@ -82,8 +85,10 @@ void loop() {
       omega_r = enc_right.getRadPerSec();
       omega_l = enc_left.getRadPerSec();
 
-      float target_r = telemetry.getTargetRightRadPerSec();
-      float target_l = telemetry.getTargetLeftRadPerSec();
+      // target_r = telemetry.getTargetRightRadPerSec();
+      // target_l = telemetry.getTargetLeftRadPerSec();
+      target_r = TARGET_RAD_PER_SEC;
+      target_l = TARGET_RAD_PER_SEC;
 
       motor_right.setTargetRadPerSec(target_r);
       motor_left.setTargetRadPerSec(target_l);
@@ -118,10 +123,10 @@ void loop() {
     Serial.print(odom.getTheta(), 3);
 
     Serial.print(" target R: ");
-    Serial.print(telemetry.getTargetRightRadPerSec());
+    Serial.print(target_r);
 
     Serial.print(" target L: ");
-    Serial.print(telemetry.getTargetLeftRadPerSec());
+    Serial.print(target_l);
 
     Serial.print(" | R omega: ");
     Serial.print(omega_r);
