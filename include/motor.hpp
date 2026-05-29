@@ -13,7 +13,7 @@ struct PID {
 
 class Motor {
 public:
-    Motor(int pin1, int pin2, int output_sign = 1);
+    Motor(int pin1, int pin2, int output_sign = 1, float velocity_ff = 0.0f);
 
     void begin(float kp, float ki, float kd);
     void setTargetRadPerSec(float target);
@@ -32,6 +32,7 @@ private:
     int pin1_;
     int pin2_;
     int output_sign_;
+    float velocity_ff_;
 
     PID pid_;
 

@@ -6,8 +6,8 @@ static float clampFloat(float x, float min_val, float max_val) {
     return x;
 }
 
-Motor::Motor(int pin1, int pin2, int output_sign)
-    : pin1_(pin1), pin2_(pin2), output_sign_(output_sign)
+Motor::Motor(int pin1, int pin2, int output_sign, float velocity_ff)
+    : pin1_(pin1), pin2_(pin2), output_sign_(output_sign), velocity_ff_(velocity_ff)
 {
     pid_.kp = 0.0f;
     pid_.ki = 0.0f;
@@ -50,12 +50,31 @@ float Motor::applyPID(float measured, float dt) {
 
     float error = target_rad_per_sec - measured;
 
-    pid_.integral += error * dt;
+    if (fabsf(target_rad_per_sec) < TARGET_STOP_EPS) {
+        pid_.integral = 0.0f;
+    }
 
     float derivative = (error - pid_.prev_error) / dt;
+    float feed_forward = velocity_ff_ * target_rad_per_sec;
+    float candidate_integral = clampFloat(
+        pid_.integral + error * dt,
+        -PID_INTEGRAL_LIMIT,
+        PID_INTEGRAL_LIMIT
+    );
+    float control_without_new_integral =
+        feed_forward + pid_.kp * error + pid_.ki * pid_.integral + pid_.kd * derivative;
+    bool saturated_high = control_without_new_integral >= PWM_MAX;
+    bool saturated_low = control_without_new_integral <= -PWM_MAX;
+    bool pushes_further_high = error > 0.0f;
+    bool pushes_further_low = error < 0.0f;
+
+    if (!((saturated_high && pushes_further_high) || (saturated_low && pushes_further_low))) {
+        pid_.integral = candidate_integral;
+    }
+
     pid_.prev_error = error;
 
-    return pid_.kp * error + pid_.ki * pid_.integral + pid_.kd * derivative;
+    return feed_forward + pid_.kp * error + pid_.ki * pid_.integral + pid_.kd * derivative;
 }
 
 void Motor::outputCommand(float control) {

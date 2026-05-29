@@ -9,6 +9,7 @@ void Encoder::begin() {
 
     noInterrupts();
     count = 0;
+    prev_state = readState();
     interrupts();
 
     prev_count = 0;
@@ -17,16 +18,40 @@ void Encoder::begin() {
 }
 
 void Encoder::handleA() {
-    bool phaseB = digitalRead(pin_b_);
+    handleTransition();
+}
 
-    long step;
+void Encoder::handleB() {
+    handleTransition();
+}
 
-    // A相のRISINGで呼ばれる前提
-    // 方向が逆なら config.hpp の *_ENCODER_INVERT を反転する
-    if (phaseB == HIGH) {
-        step = -1;
-    } else {
-        step = 1;
+uint8_t Encoder::readState() const {
+    uint8_t a = digitalRead(pin_a_) == HIGH ? 1 : 0;
+    uint8_t b = digitalRead(pin_b_) == HIGH ? 1 : 0;
+    return (a << 1) | b;
+}
+
+void Encoder::handleTransition() {
+    uint8_t current_state = readState();
+    uint8_t previous_state = prev_state;
+
+    if (current_state == previous_state) {
+        return;
+    }
+
+    // Valid forward sequence: 00 -> 01 -> 11 -> 10 -> 00.
+    static constexpr int8_t transition_table[16] = {
+         0,  1, -1,  0,
+        -1,  0,  0,  1,
+         1,  0,  0, -1,
+         0, -1,  1,  0,
+    };
+
+    int8_t step = transition_table[(previous_state << 2) | current_state];
+    prev_state = current_state;
+
+    if (step == 0) {
+        return;
     }
 
     if (invert_) {
@@ -34,10 +59,6 @@ void Encoder::handleA() {
     }
 
     count += step;
-}
-
-void Encoder::handleB() {
-    // A相RISINGだけを使う場合、この関数は基本使わない
 }
 
 long Encoder::getCount() const {
@@ -50,6 +71,7 @@ long Encoder::getCount() const {
 void Encoder::resetCount() {
     noInterrupts();
     count = 0;
+    prev_state = readState();
     interrupts();
 
     prev_count = 0;
@@ -67,7 +89,7 @@ void Encoder::updateVelocity(unsigned long now_ms) {
     long current_count = getCount();
     long delta_count = current_count - prev_count;
 
-    float rev = static_cast<float>(delta_count) / PULSE_PER_REV;
+    float rev = static_cast<float>(delta_count) / (PULSE_PER_REV * ENCODER_COUNT_MULTIPLIER);
     float dt_s = static_cast<float>(dt_ms) / 1000.0f;
 
     rad_per_sec = rev * 2.0f * PI / dt_s;

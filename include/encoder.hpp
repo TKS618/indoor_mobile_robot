@@ -18,11 +18,15 @@ public:
     float getRadPerSec() const;
 
 private:
+    uint8_t readState() const;
+    void handleTransition();
+
     uint8_t pin_a_;
     uint8_t pin_b_;
     bool invert_;
 
     volatile long count      = 0;
+    volatile uint8_t prev_state = 0;
     long          prev_count = 0;
     unsigned long prev_time_ms = 0;
 

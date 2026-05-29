@@ -13,22 +13,30 @@ Encoder enc_left (LEFT_ENC_A , LEFT_ENC_B, LEFT_ENCODER_INVERT);
 // Motor motor_right(RIGHT_ESC_PIN, -1, -1, RIGHT_ESC_SIGN);
 // Motor motor_left (LEFT_ESC_PIN , -1, -1, LEFT_ESC_SIGN);
 
-Motor motor_right(RIGHT_PIN_1, RIGHT_PIN_2, RIGHT_ESC_SIGN);
-Motor motor_left (LEFT_PIN_1, LEFT_PIN_2, LEFT_ESC_SIGN);
+Motor motor_right(RIGHT_PIN_1, RIGHT_PIN_2, RIGHT_ESC_SIGN, KF_RIGHT);
+Motor motor_left (LEFT_PIN_1, LEFT_PIN_2, LEFT_ESC_SIGN, KF_LEFT);
 
 
 Odometry odom;
 Telemetry telemetry;
 
-constexpr float TARGET_RAD_PER_SEC = -4.0f;
+constexpr float TARGET_RAD_PER_SEC = 4.5f;
 
 // ===== ISR =====
 void isr_right_A(){
   enc_right.handleA();
 }
 
+void isr_right_B(){
+  enc_right.handleB();
+}
+
 void isr_left_A(){
   enc_left.handleA();
+}
+
+void isr_left_B(){
+  enc_left.handleB();
 }
 
 void setup() {
@@ -37,8 +45,10 @@ void setup() {
   enc_right.begin();
   enc_left.begin();
 
-  attachInterrupt(digitalPinToInterrupt(RIGHT_ENC_A), isr_right_A, RISING);
-  attachInterrupt(digitalPinToInterrupt(LEFT_ENC_A ), isr_left_A , RISING);
+  attachInterrupt(digitalPinToInterrupt(RIGHT_ENC_A), isr_right_A, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(RIGHT_ENC_B), isr_right_B, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(LEFT_ENC_A ), isr_left_A , CHANGE);
+  attachInterrupt(digitalPinToInterrupt(LEFT_ENC_B ), isr_left_B , CHANGE);
 
   /*Motor setup*/
   analogWriteResolution(PWM_BIT);
@@ -68,6 +78,8 @@ void loop() {
   static float omega_l = 0.0f;
   static float target_r = 0.0f;
   static float target_l = 0.0f;
+  static long last_print_count_r = 0;
+  static long last_print_count_l = 0;
 
   // telemetry.spin();
   // telemetry.updateCmdVelTimeout();
@@ -110,7 +122,7 @@ void loop() {
     // telemetry.publishOdom(odom.getX(), odom.getY(), odom.getTheta());
   }
   
-  if (now - last_print_time >= MEASURE_PERIOD) {
+  if (now - last_print_time >= PRINT_PERIOD) {
     last_print_time = now;
 
     int cmd_r = motor_right.getLastCommand();
@@ -118,6 +130,12 @@ void loop() {
 
     float control_r = motor_right.getLastControl();
     float control_l = motor_left.getLastControl();
+    long count_r = enc_right.getCount();
+    long count_l = enc_left.getCount();
+    long delta_print_count_r = count_r - last_print_count_r;
+    long delta_print_count_l = count_l - last_print_count_l;
+    last_print_count_r = count_r;
+    last_print_count_l = count_l;
 
     Serial.print(" | x: ");
     Serial.print(odom.getX(), 3);
@@ -136,6 +154,8 @@ void loop() {
 
     Serial.print(" | R omega: ");
     Serial.print(omega_r);
+    Serial.print("  dcnt: ");
+    Serial.print(delta_print_count_r);
     Serial.print("  control: ");
     Serial.print(control_r);
     Serial.print("  cmd: ");
@@ -143,6 +163,8 @@ void loop() {
 
     Serial.print(" | L omega: ");
     Serial.print(omega_l);
+    Serial.print("  dcnt: ");
+    Serial.print(delta_print_count_l);
     Serial.print("  control: ");
     Serial.print(control_l);
     Serial.print("  cmd: ");
@@ -176,4 +198,155 @@ void loop() {
 // }
 
 // void loop() {
+// }gWriteFrequency(LEFT_PIN_2, 1000);
+//   analogWriteResolution(PWM_BIT);
+//   analogWrite(LEFT_PIN_1, 2000);
+//   digitalWrite(LEFT_PIN_2, LOW);
+// }
+
+// void loop() {
+// }
+
+// Encoder test code
+// #include <Arduino.h>
+// #include "config.hpp"
+
+// struct EncoderProbe {
+//   uint8_t pin_a;
+//   uint8_t pin_b;
+//   volatile uint8_t state;
+//   volatile long quad_count;
+//   volatile uint32_t transitions;
+//   volatile uint32_t invalid_transitions;
+//   volatile uint32_t visits[4];
+// };
+
+// EncoderProbe probe_right = {RIGHT_ENC_A, RIGHT_ENC_B, 0, 0, 0, 0, {0, 0, 0, 0}};
+// EncoderProbe probe_left  = {LEFT_ENC_A,  LEFT_ENC_B,  0, 0, 0, 0, {0, 0, 0, 0}};
+
+// constexpr unsigned long PRINT_PERIOD_MS = 100;
+
+// uint8_t readEncoderState(const EncoderProbe& probe) {
+//   uint8_t a = digitalRead(probe.pin_a) == HIGH ? 1 : 0;
+//   uint8_t b = digitalRead(probe.pin_b) == HIGH ? 1 : 0;
+//   return (a << 1) | b;
+// }
+
+// int8_t quadratureDelta(uint8_t prev, uint8_t current) {
+//   // Index is previous state in upper two bits and current state in lower two bits.
+//   // Valid forward sequence: 00 -> 01 -> 11 -> 10 -> 00.
+//   static constexpr int8_t table[16] = {
+//       0,  1, -1,  0,
+//      -1,  0,  0,  1,
+//       1,  0,  0, -1,
+//       0, -1,  1,  0,
+//   };
+//   return table[(prev << 2) | current];
+// }
+
+// void updateProbe(EncoderProbe& probe) {
+//   uint8_t current = readEncoderState(probe);
+//   uint8_t prev = probe.state;
+
+//   if (current == prev) {
+//     return;
+//   }
+
+//   int8_t delta = quadratureDelta(prev, current);
+//   probe.state = current;
+//   probe.transitions++;
+//   probe.visits[current]++;
+
+//   if (delta == 0) {
+//     probe.invalid_transitions++;
+//     return;
+//   }
+
+//   probe.quad_count += delta;
+// }
+
+// void isrRightA() { updateProbe(probe_right); }
+// void isrRightB() { updateProbe(probe_right); }
+// void isrLeftA()  { updateProbe(probe_left); }
+// void isrLeftB()  { updateProbe(probe_left); }
+
+// void printStateBits(uint8_t state) {
+//   Serial.print((state >> 1) & 1);
+//   Serial.print(',');
+//   Serial.print(state & 1);
+// }
+
+// void printProbe(const char* name, const EncoderProbe& probe) {
+//   noInterrupts();
+//   uint8_t state = probe.state;
+//   long quad_count = probe.quad_count;
+//   uint32_t transitions = probe.transitions;
+//   uint32_t invalid_transitions = probe.invalid_transitions;
+//   uint32_t visits_00 = probe.visits[0];
+//   uint32_t visits_01 = probe.visits[1];
+//   uint32_t visits_10 = probe.visits[2];
+//   uint32_t visits_11 = probe.visits[3];
+//   interrupts();
+
+//   Serial.print(name);
+//   Serial.print(" A,B=");
+//   printStateBits(state);
+//   Serial.print(" state=");
+//   Serial.print(state, BIN);
+//   Serial.print(" quad=");
+//   Serial.print(quad_count);
+//   Serial.print(" transitions=");
+//   Serial.print(transitions);
+//   Serial.print(" invalid=");
+//   Serial.print(invalid_transitions);
+//   Serial.print(" visits[00,01,10,11]=");
+//   Serial.print(visits_00);
+//   Serial.print(',');
+//   Serial.print(visits_01);
+//   Serial.print(',');
+//   Serial.print(visits_10);
+//   Serial.print(',');
+//   Serial.print(visits_11);
+// }
+
+// void setup() {
+//   Serial.begin(115200);
+//   delay(1000);
+
+//   pinMode(RIGHT_ENC_A, INPUT_PULLUP);
+//   pinMode(RIGHT_ENC_B, INPUT_PULLUP);
+//   pinMode(LEFT_ENC_A, INPUT_PULLUP);
+//   pinMode(LEFT_ENC_B, INPUT_PULLUP);
+
+//   probe_right.state = readEncoderState(probe_right);
+//   probe_left.state = readEncoderState(probe_left);
+//   probe_right.visits[probe_right.state] = 1;
+//   probe_left.visits[probe_left.state] = 1;
+
+//   attachInterrupt(digitalPinToInterrupt(RIGHT_ENC_A), isrRightA, CHANGE);
+//   attachInterrupt(digitalPinToInterrupt(RIGHT_ENC_B), isrRightB, CHANGE);
+//   attachInterrupt(digitalPinToInterrupt(LEFT_ENC_A), isrLeftA, CHANGE);
+//   attachInterrupt(digitalPinToInterrupt(LEFT_ENC_B), isrLeftB, CHANGE);
+
+//   Serial.println("Encoder A/B phase probe");
+//   Serial.println("Rotate wheels slowly first. If B phase is not read, visits will miss states with B=1.");
+//   Serial.println("Forward sign here assumes sequence 00 -> 01 -> 11 -> 10 -> 00.");
+// }
+
+// void loop() {
+//   static unsigned long last_print_ms = 0;
+//   unsigned long now = millis();
+
+//   if (now - last_print_ms < PRINT_PERIOD_MS) {
+//     return;
+//   }
+//   last_print_ms = now;
+
+//   Serial.print("t=");
+//   Serial.print(now);
+//   Serial.print("ms | ");
+//   printProbe("R", probe_right);
+//   Serial.print(" | ");
+//   printProbe("L", probe_left);
+//   Serial.println();
 // }
