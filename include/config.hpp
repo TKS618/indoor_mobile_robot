@@ -29,8 +29,8 @@ constexpr unsigned long MEASURE_PERIOD = 10;                             //エ�
 constexpr unsigned long PRINT_PERIOD = 100;                              //シリアル表示周期
 
 /*Odometry*/
-constexpr float WHEEL_RADIUS = 0.034f; //半径3.4cm
-constexpr float WHEEL_BASE   = 0.282782f;
+constexpr float WHEEL_RADIUS = 0.03357f; //半径3.4cm
+constexpr float WHEEL_BASE   = 0.29398f;
 constexpr float WHEEL_RADIUS_INV = 1 / WHEEL_RADIUS;
 constexpr float WHEEL_BASE_INV = 1 / WHEEL_BASE;
 /*Motor*/
@@ -53,16 +53,16 @@ constexpr int LEFT_ESC_SIGN  = +1;
 
 
 // ===== PID =====
-constexpr float KP_LEFT  = 10.0f;
+constexpr float KP_LEFT  = 50.0f;//10.0f
 constexpr float KI_LEFT  = 1.0f;
 constexpr float KD_LEFT  = 1.0f;
-constexpr float KP_RIGHT = 100.0f;
+constexpr float KP_RIGHT = 50.0f;//100.0f
 constexpr float KI_RIGHT = 1.0f;
 constexpr float KD_RIGHT = 1.0f;
 
 // ===== Velocity feed-forward =====
 constexpr float KF_LEFT  = 800.0f; // cmd 4000 at 5 rad/s
-constexpr float KF_RIGHT = 800.0f; // cmd 4000 at 5 rad/s
+constexpr float KF_RIGHT = 775.0f; // cmd 4000 at 5 rad/s
 constexpr float PID_INTEGRAL_LIMIT = 2.0f; // [rad] integral(error * dt)
 constexpr float TARGET_STOP_EPS = 0.01f;  // [rad/s]
 
@@ -71,4 +71,4 @@ constexpr float MAX_WHEEL_RAD_S = 5.0f;
 
 /*Telemetry*/
 constexpr unsigned long ODOM_PUBLISH_PERIOD = 50;   // [ms] 20Hz
-constexpr unsigned long CMD_VEL_TIMEOUT_MS  = 500;  // [ms]
+constexpr unsigned long CMD_VEL_TIMEOUT_MS  = 1000000;  // [ms] 1000sec

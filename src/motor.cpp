@@ -24,8 +24,8 @@ void Motor::begin(float kp, float ki, float kd) {
     analogWriteFrequency(pin1_, PWM_FREQ_HZ);
     analogWriteFrequency(pin2_, PWM_FREQ_HZ);
 
-    digitalWrite(pin1_, LOW);
-    digitalWrite(pin2_, LOW);
+    analogWrite(pin1_, 0);
+    analogWrite(pin2_, 0);
 
     pid_.kp = kp;
     pid_.ki = ki;
@@ -89,19 +89,24 @@ void Motor::outputCommand(float control) {
 
     if (pwm > 0) {
         analogWrite(pin1_, pwm);
-        digitalWrite(pin2_, LOW);
+        analogWrite(pin2_, 0);
     } else if (pwm < 0) {
-        digitalWrite(pin1_, LOW);
+        analogWrite(pin1_, 0);
         analogWrite(pin2_, -pwm);
     } else {
-        digitalWrite(pin1_, LOW);
-        digitalWrite(pin2_, LOW);
+        analogWrite(pin1_, 0);
+        analogWrite(pin2_, 0);
     }
 
     last_command = pwm;
 }
 
 void Motor::update(float measured_rad_per_sec, float dt) {
+    if (fabsf(target_rad_per_sec) < TARGET_STOP_EPS) {
+        stop();
+        return;
+    }
+
     float control = applyPID(measured_rad_per_sec, dt);
     outputCommand(control);
 }
@@ -111,8 +116,8 @@ void Motor::stop() {
     pid_.integral = 0.0f;
     pid_.prev_error = 0.0f;
 
-    digitalWrite(pin1_, LOW);
-    digitalWrite(pin2_, LOW);
+    analogWrite(pin1_, 0);
+    analogWrite(pin2_, 0);
 
     last_control = 0.0f;
     last_command = 0;

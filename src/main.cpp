@@ -4,7 +4,10 @@
 #include "odom.hpp"
 #include "telemetry.hpp"
 
+#include <micro_ros_platformio.h>
+
 unsigned long start_time = 0;
+constexpr bool ENABLE_SERIAL_DEBUG = false;
 
 // ===== Encoderインスタンス =====
 Encoder enc_right(RIGHT_ENC_A, RIGHT_ENC_B, RIGHT_ENCODER_INVERT);
@@ -19,8 +22,6 @@ Motor motor_left (LEFT_PIN_1, LEFT_PIN_2, LEFT_ESC_SIGN, KF_LEFT);
 
 Odometry odom;
 Telemetry telemetry;
-
-constexpr float TARGET_RAD_PER_SEC = 4.5f;
 
 // ===== ISR =====
 void isr_right_A(){
@@ -41,6 +42,7 @@ void isr_left_B(){
 
 void setup() {
   Serial.begin(115200);
+  set_microros_serial_transports(Serial);
   /*Encode setup*/
   enc_right.begin();
   enc_left.begin();
@@ -59,13 +61,6 @@ void setup() {
   motor_right.begin(KP_RIGHT, KI_RIGHT, KD_RIGHT);
   motor_left.begin(KP_LEFT, KI_LEFT, KD_LEFT);
 
-  // micro-ROS setup
-  // if (!telemetry.begin()) {
-  //   while (1) {
-  //     Serial.println("micro-ROS init failed");
-  //     delay(1000);
-  //   }
-  // }
   delay(1000);
   start_time = millis();
 }
@@ -81,8 +76,8 @@ void loop() {
   static long last_print_count_r = 0;
   static long last_print_count_l = 0;
 
-  // telemetry.spin();
-  // telemetry.updateCmdVelTimeout();
+  telemetry.update();
+  telemetry.updateCmdVelTimeout();
   
   unsigned long now = millis();
   if (last_control_time == 0) {
@@ -103,10 +98,8 @@ void loop() {
       omega_r = enc_right.getRadPerSec();
       omega_l = enc_left.getRadPerSec();
 
-      // target_r = telemetry.getTargetRightRadPerSec();
-      // target_l = telemetry.getTargetLeftRadPerSec();
-      target_r = TARGET_RAD_PER_SEC;
-      target_l = TARGET_RAD_PER_SEC;
+      target_r = telemetry.getTargetRightRadPerSec();
+      target_l = telemetry.getTargetLeftRadPerSec();
 
       motor_right.setTargetRadPerSec(target_r);
       motor_left.setTargetRadPerSec(target_l);
@@ -119,10 +112,10 @@ void loop() {
   
   if(now -last_odom_pub_time >= ODOM_PUBLISH_PERIOD){
     last_odom_pub_time = now;
-    // telemetry.publishOdom(odom.getX(), odom.getY(), odom.getTheta());
+    telemetry.publishOdom(odom.getX(), odom.getY(), odom.getTheta(), omega_r, omega_l);
   }
   
-  if (now - last_print_time >= PRINT_PERIOD) {
+  if (ENABLE_SERIAL_DEBUG && now - last_print_time >= PRINT_PERIOD) {
     last_print_time = now;
 
     int cmd_r = motor_right.getLastCommand();
